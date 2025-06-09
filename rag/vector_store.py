@@ -30,11 +30,11 @@ class VectorStore:
         """Initialize ChromaDB client and collection"""
         try:
             # Create vector database directory if it doesn't exist
-            Path(settings.vector_db_path).mkdir(parents=True, exist_ok=True)
+            Path(settings.vector_store_path).mkdir(parents=True, exist_ok=True)
             
             # Initialize ChromaDB client
             self.client = chromadb.PersistentClient(
-                path=settings.vector_db_path,
+                path=str(settings.vector_store_path),
                 settings=ChromaSettings(
                     anonymized_telemetry=False,
                     allow_reset=True
@@ -181,7 +181,7 @@ class VectorStore:
     def _get_storage_size(self) -> int:
         """Calculate storage size of the vector database"""
         try:
-            db_path = Path(settings.vector_db_path)
+            db_path = Path(settings.vector_store_path)
             if db_path.exists():
                 return sum(f.stat().st_size for f in db_path.rglob('*') if f.is_file())
             return 0

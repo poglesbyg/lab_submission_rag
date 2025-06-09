@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from rag.rag_orchestrator import RAGOrchestrator
-from models.submission import LaboratorySubmission
+from models.submission import LabSubmission
 
 app = FastAPI(
     title="Laboratory Submission RAG API",
@@ -29,12 +29,15 @@ rag_orchestrator = RAGOrchestrator()
 
 class QueryRequest(BaseModel):
     query: str
-    context: Optional[dict] = None
+    submission_id: Optional[str] = None
+    k: Optional[int] = 5
 
 class ProcessResponse(BaseModel):
     submission_id: str
     status: str
     message: str
+    success: bool
+    confidence_score: float
 
 @app.post("/process", response_model=ProcessResponse)
 async def process_submission(file: UploadFile = File(...)):
@@ -49,18 +52,15 @@ async def process_submission(file: UploadFile = File(...)):
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Process the submission
-        submission = LaboratorySubmission(
-            source_file=str(file_path),
-            metadata={"filename": file.filename}
-        )
-        
-        result = await rag_orchestrator.process_submission(submission)
+        # Process the submission using RAG orchestrator
+        result = await rag_orchestrator.process_submission(str(file_path))
         
         return ProcessResponse(
-            submission_id=str(result.id),
-            status="success",
-            message="Submission processed successfully"
+            submission_id=result.submission_id or "unknown",
+            status="success" if result.success else "failed",
+            message="Submission processed successfully" if result.success else "Processing failed",
+            success=result.success,
+            confidence_score=result.confidence_score
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -69,15 +69,25 @@ async def process_submission(file: UploadFile = File(...)):
 async def query_submission(request: QueryRequest):
     """Query the RAG system with a specific question."""
     try:
-        result = await rag_orchestrator.query(
-            request.query,
-            context=request.context
+        result = await rag_orchestrator.query_submission(
+            query=request.query,
+            submission_id=request.submission_id,
+            k=request.k or 5
         )
-        return result
+        return {"answer": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy"} 
+    return {"status": "healthy"}
+
+@app.get("/system-info")
+async def get_system_info():
+    """Get information about the RAG system."""
+    try:
+        info = rag_orchestrator.get_system_info()
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 

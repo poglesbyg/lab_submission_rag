@@ -94,13 +94,18 @@ class Settings(BaseSettings):
         """Pydantic settings configuration"""
         env_file = ".env"
         env_file_encoding = "utf-8"
-        case_sensitive = True
+        case_sensitive = False  # Allow case-insensitive environment variables
+        extra = "ignore"  # Ignore extra environment variables
 
 # Create settings instance
 settings = Settings()
 
 # Validate API keys
-settings.validate_api_keys()
+try:
+    settings.validate_api_keys()
+except ValueError as e:
+    # Log warning but don't fail - allow service to start with default config
+    print(f"Warning: {e}")
 
 # Create necessary directories
 for directory in [settings.upload_dir, settings.export_dir, settings.log_dir, settings.vector_store_path]:
