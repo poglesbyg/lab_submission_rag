@@ -1,67 +1,107 @@
 """
-Configuration settings for the Lab Submission RAG system
+Configuration settings for the RAG system
 """
 
-from pydantic_settings import BaseSettings
-from typing import Optional
 import os
+from pathlib import Path
+from typing import Optional
+from pydantic_settings import BaseSettings
+from pydantic import Field
 
 class Settings(BaseSettings):
-    # API Configuration
-    api_title: str = "Lab Submission RAG API"
-    api_version: str = "1.0.0"
-    api_description: str = "RAG system for extracting laboratory submission information"
+    """Application settings"""
     
-    # Server Configuration
-    host: str = "0.0.0.0"
-    port: int = 8000
-    debug: bool = False
+    # API Keys (optional when using Ollama)
+    openai_api_key: Optional[str] = Field(None, description="OpenAI API key")
+    anthropic_api_key: Optional[str] = Field(None, description="Anthropic API key")
     
-    # Document Processing Configuration
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
-    max_file_size_mb: int = 50
-    supported_file_types: list = [".pdf", ".docx", ".txt"]
+    # LLM Settings
+    llm_provider: str = Field(
+        default="openai",
+        description="LLM provider to use (openai, anthropic, ollama)"
+    )
+    model_name: str = Field(
+        default="gpt-3.5-turbo",
+        description="Name of the LLM model to use"
+    )
     
-    # Vector Store Configuration
-    vector_db_path: str = "./data/vector_store"
-    embedding_model: str = "all-MiniLM-L6-v2"
-    similarity_threshold: float = 0.7
-    max_search_results: int = 10
+    # Ollama Settings
+    use_ollama: bool = Field(
+        default=False,
+        description="Whether to use Ollama for local LLM inference"
+    )
+    ollama_model: str = Field(
+        default="llama2:7b",
+        description="Ollama model to use"
+    )
+    ollama_base_url: str = Field(
+        default="http://localhost:11434",
+        description="Base URL for Ollama API"
+    )
     
-    # LLM Configuration
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    default_llm_model: str = "gpt-4"
-    llm_temperature: float = 0.1
-    max_tokens: int = 2000
+    # Embedding Settings
+    embedding_model: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="Model to use for embeddings"
+    )
     
-    # Laboratory Domain Configuration
-    required_administrative_fields: list = [
-        "submitter_first_name", 
-        "submitter_last_name", 
-        "submitter_email"
-    ]
-    default_analysis_types: list = ["wgs", "wes", "rna_seq", "targeted_panel"]
-    default_sample_types: list = ["blood", "saliva", "tissue", "dna", "rna"]
+    # Document Processing
+    chunk_size: int = Field(
+        default=1000,
+        description="Size of document chunks in characters"
+    )
+    chunk_overlap: int = Field(
+        default=200,
+        description="Overlap between chunks in characters"
+    )
     
-    # Processing Configuration
-    batch_size: int = 10
-    processing_timeout: int = 300  # seconds
-    retry_attempts: int = 3
+    # Vector Store
+    vector_store_path: Path = Field(
+        default=Path("data/vector_store"),
+        description="Path to vector store files"
+    )
     
-    # Logging Configuration
-    log_level: str = "INFO"
-    log_file: str = "./logs/rag_system.log"
+    # File Storage
+    upload_dir: Path = Field(
+        default=Path("uploads"),
+        description="Directory for uploaded files"
+    )
+    export_dir: Path = Field(
+        default=Path("exports"),
+        description="Directory for exported files"
+    )
     
-    # Storage Configuration  
-    data_directory: str = "./data"
-    upload_directory: str = "./uploads"
-    export_directory: str = "./exports"
+    # Logging
+    log_level: str = Field(
+        default="INFO",
+        description="Logging level"
+    )
+    log_dir: Path = Field(
+        default=Path("logs"),
+        description="Directory for log files"
+    )
+    
+    def validate_api_keys(self) -> None:
+        """Validate that required API keys are present based on provider"""
+        if self.llm_provider == "openai" and not self.openai_api_key:
+            raise ValueError("OpenAI API key is required when using OpenAI provider")
+        if self.llm_provider == "anthropic" and not self.anthropic_api_key:
+            raise ValueError("Anthropic API key is required when using Anthropic provider")
+        if self.llm_provider == "ollama" and not self.use_ollama:
+            raise ValueError("use_ollama must be True when using Ollama provider")
     
     class Config:
+        """Pydantic settings configuration"""
         env_file = ".env"
-        case_sensitive = False
+        env_file_encoding = "utf-8"
+        case_sensitive = True
 
-# Create global settings instance
-settings = Settings() 
+# Create settings instance
+settings = Settings()
+
+# Validate API keys
+settings.validate_api_keys()
+
+# Create necessary directories
+for directory in [settings.upload_dir, settings.export_dir, settings.log_dir, settings.vector_store_path]:
+    directory.mkdir(parents=True, exist_ok=True) 

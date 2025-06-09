@@ -51,6 +51,7 @@ Automatically extracts laboratory submission information from documents across 7
 - **Vector Storage**: Efficient similarity search with ChromaDB
 
 ### 🤖 **LLM Integration**
+- **Local Llama Models** via Ollama (privacy-focused, no API costs)
 - **OpenAI GPT-4** and **Anthropic Claude** support
 - **Structured Extraction**: Converts unstructured text to validated data models
 - **Confidence Scoring**: Provides extraction confidence metrics
@@ -103,7 +104,15 @@ brew install uv
    uv pip install pydantic[email]
    ```
 
-3. **Set up environment variables**
+3. **Choose your LLM provider**
+   
+   **Option A: Local Llama Models (Recommended - Private & Free)**
+   ```bash
+   # Install and setup Ollama with Llama models
+   python setup_llama.py --all
+   ```
+   
+   **Option B: Cloud LLM APIs**
    Create a `.env` file with your API keys:
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
@@ -299,13 +308,47 @@ LLM_TEMPERATURE=0.1
 MAX_TOKENS=2000
 ```
 
-### Environment Variables
+### LLM Provider Configuration
 
-Create a `.env` file for sensitive configuration:
+The system supports multiple LLM providers. Choose based on your needs:
+
+#### **🦙 Local Llama Models (Recommended)**
+- **Pros**: Private, no API costs, works offline
+- **Cons**: Requires local compute resources
+
+```bash
+# Automatic setup
+python setup_llama.py --all
+
+# Manual configuration in .env
+USE_OLLAMA=true
+OLLAMA_MODEL=llama3.1:8b
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+#### **☁️ Cloud LLM APIs**
+- **Pros**: Powerful models, no local resources needed
+- **Cons**: API costs, data leaves your environment
 
 ```env
-# LLM API Keys (choose one)
+# OpenAI (GPT-4)
 OPENAI_API_KEY=your_openai_key
+
+# Anthropic (Claude)
+ANTHROPIC_API_KEY=your_anthropic_key
+```
+
+### Environment Variables
+
+Create a `.env` file for configuration:
+
+```env
+# LLM Configuration (choose one approach)
+USE_OLLAMA=true                    # Use local Llama models
+OLLAMA_MODEL=llama3.1:8b          # Llama model to use
+# OR
+OPENAI_API_KEY=your_openai_key     # Cloud API option
+# OR  
 ANTHROPIC_API_KEY=your_anthropic_key
 
 # Optional: Custom settings
@@ -595,6 +638,7 @@ For issues and questions:
 **Development:**
 - `pyproject.toml` - Modern Python project configuration with uv
 - `setup_check.py` - Environment verification script
+- `setup_llama.py` - Llama/Ollama installation and configuration
 - `example_usage.py` - Usage demonstration
 - `requirements.txt` - Legacy pip requirements (use pyproject.toml instead)
 

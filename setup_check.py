@@ -85,6 +85,7 @@ def check_optional_dependencies():
     optional_deps = [
         ('openai', 'OpenAI API client'),
         ('anthropic', 'Anthropic API client'),
+        ('ollama', 'Ollama client for local Llama models'),
         ('email_validator', 'Email validation for Pydantic'),
         ('PyPDF2', 'PDF document processing'),
         ('docx', 'DOCX document processing (python-docx)'),
@@ -101,6 +102,53 @@ def check_optional_dependencies():
             print(f"   ✅ {package} - {description}")
         except ImportError:
             print(f"   ⚠️  {package} - {description} (optional, not installed)")
+
+def check_llm_providers():
+    """Check available LLM providers"""
+    print("\n🤖 Checking LLM providers...")
+    
+    # Check for Ollama
+    try:
+        import subprocess
+        result = subprocess.run(['ollama', '--version'], 
+                              capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"   ✅ Ollama available: {result.stdout.strip()}")
+            
+            # Check if Ollama is running
+            try:
+                list_result = subprocess.run(['ollama', 'list'], 
+                                           capture_output=True, text=True)
+                if list_result.returncode == 0:
+                    print("   ✅ Ollama service is running")
+                    if list_result.stdout.strip():
+                        models = [line.split()[0] for line in list_result.stdout.strip().split('\n')[1:]]
+                        print(f"   📋 Available models: {', '.join(models)}")
+                    else:
+                        print("   ⚠️  No models installed. Run: python setup_llama.py --install")
+                else:
+                    print("   ⚠️  Ollama service not running. Run: ollama serve")
+            except:
+                print("   ⚠️  Ollama service not running")
+        else:
+            print("   ❌ Ollama command failed")
+    except FileNotFoundError:
+        print("   ⚠️  Ollama not installed. Run: python setup_llama.py --install")
+    except Exception as e:
+        print(f"   ❌ Ollama check failed: {str(e)}")
+    
+    # Check environment configuration
+    env_file = Path('.env')
+    if env_file.exists():
+        env_content = env_file.read_text()
+        if 'USE_OLLAMA=true' in env_content:
+            print("   ✅ System configured to use Ollama")
+        elif 'OPENAI_API_KEY' in env_content:
+            print("   ✅ OpenAI API key configured")
+        elif 'ANTHROPIC_API_KEY' in env_content:
+            print("   ✅ Anthropic API key configured")
+        else:
+            print("   ⚠️  No LLM provider configured in .env")
 
 def check_project_structure():
     """Check if project structure is correct"""
@@ -191,6 +239,7 @@ def main():
     
     # Run optional checks
     check_optional_dependencies()
+    check_llm_providers()
     check_environment_config()
     
     print("\n" + "=" * 50)

@@ -337,3 +337,4 @@ class LabSubmissionRAG:
 
 # Create global RAG instance
 rag_system = LabSubmissionRAG() 
+ 

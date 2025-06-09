@@ -1,20 +1,64 @@
 """
-RAG-specific models and data structures
+Data models for RAG system components
 """
 
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 class DocumentChunk(BaseModel):
-    """Represents a chunk of processed document"""
-    chunk_id: str
-    content: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    embedding: Optional[List[float]] = None
-    source_document: str
-    page_number: Optional[int] = None
-    chunk_index: int
+    """Represents a chunk of text from a document"""
+    content: str = Field(..., description="The text content of the chunk")
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata associated with the chunk"
+    )
+    chunk_id: str = Field(..., description="Unique identifier for the chunk")
+    source_document: str = Field(..., description="Source document identifier")
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Timestamp when the chunk was created"
+    )
+
+class ExtractionResult(BaseModel):
+    """Result of extracting information from a document"""
+    success: bool = Field(..., description="Whether extraction was successful")
+    confidence_score: float = Field(
+        ...,
+        description="Confidence score of the extraction (0-1)",
+        ge=0.0,
+        le=1.0
+    )
+    missing_fields: List[str] = Field(
+        default_factory=list,
+        description="List of required fields that were not found"
+    )
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="List of warnings generated during extraction"
+    )
+    processing_time: float = Field(
+        ...,
+        description="Time taken to process the document in seconds",
+        ge=0.0
+    )
+    source_document: str = Field(..., description="Source document identifier")
+    submission_id: Optional[str] = Field(
+        None,
+        description="Unique identifier for the submission"
+    )
+    extracted_data: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Extracted data from the document"
+    )
+
+class VectorStoreInfo(BaseModel):
+    """Information about the vector store state"""
+    total_chunks: int = Field(..., description="Total number of chunks in store")
+    total_documents: int = Field(..., description="Total number of source documents")
+    embedding_dimension: int = Field(..., description="Dimension of embeddings")
+    last_updated: datetime = Field(..., description="Last update timestamp")
+    storage_path: str = Field(..., description="Path to vector store files")
 
 class QueryResult(BaseModel):
     """Result of a RAG query"""
@@ -35,10 +79,3 @@ class DocumentMetadata(BaseModel):
     total_chunks: int
     extraction_status: str
     
-class VectorStoreInfo(BaseModel):
-    """Information about the vector store"""
-    total_documents: int
-    total_chunks: int
-    embedding_model: str
-    last_updated: datetime
-    storage_size: int 

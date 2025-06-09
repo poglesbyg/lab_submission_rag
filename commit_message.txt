@@ -1,0 +1,33 @@
+feat: Dockerize RAG system and enhance configuration
+
+This commit implements containerization of the laboratory submission RAG system
+and improves configuration management with the following changes:
+
+Core Changes:
+- Add Dockerfile for Python 3.11 environment setup
+- Create docker-compose.yml with volume mounts and health checks
+- Implement FastAPI service in api/main.py with core endpoints
+- Add comprehensive configuration management in config.py
+
+Configuration Improvements:
+- Make API keys optional when using Ollama
+- Add Ollama-specific configuration options
+- Implement provider-specific validation
+- Support environment variable configuration
+
+API Endpoints:
+- /process: Handle laboratory submission processing
+- /query: Support RAG system queries
+- /health: Provide health check endpoint
+
+Dependencies:
+- Add email-validator for Pydantic email validation
+- Add ollama package for local LLM support
+
+The system now supports both cloud-based LLM providers (OpenAI/Anthropic)
+and local Ollama deployment, with proper validation and error handling.
+
+Breaking Changes:
+- Configuration now requires explicit provider selection
+- API keys are optional when using Ollama
+- Environment variables must match new configuration schema 

@@ -13,6 +13,7 @@ class PriorityLevel(str, Enum):
     LOW = "low"
 
 class SampleType(str, Enum):
+    """Types of laboratory samples"""
     BLOOD = "blood"
     SALIVA = "saliva"
     TISSUE = "tissue"
@@ -20,6 +21,7 @@ class SampleType(str, Enum):
     DNA = "dna"
     RNA = "rna"
     OTHER = "other"
+    SWAB = "swab"
 
 class AnalysisType(str, Enum):
     WGS = "wgs"
@@ -29,6 +31,21 @@ class AnalysisType(str, Enum):
     CHIP_SEQ = "chip_seq"
     ATAC_SEQ = "atac_seq"
     OTHER = "other"
+
+class StorageCondition(str, Enum):
+    """Storage conditions for samples"""
+    ROOM_TEMP = "room_temperature"
+    REFRIGERATED = "refrigerated"
+    FROZEN = "frozen"
+    CRYOGENIC = "cryogenic"
+
+class ProcessingStatus(str, Enum):
+    """Status of sample processing"""
+    RECEIVED = "received"
+    IN_PROCESS = "in_process"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 # 1. Administrative Information
 class AdministrativeInfo(BaseModel):
@@ -111,23 +128,61 @@ class SampleDetails(BaseModel):
 
 # Complete Submission Model
 class LabSubmission(BaseModel):
-    """Complete laboratory submission containing all 7 categories"""
-    administrative_info: AdministrativeInfo
-    source_material: SourceMaterial
-    pooling_info: PoolingInfo
-    sequence_generation: SequenceGeneration
-    container_info: ContainerInfo
-    informatics_info: InformaticsInfo
-    sample_details: SampleDetails
+    """Laboratory sample submission model"""
+    submission_id: str = Field(..., description="Unique identifier for the submission")
+    client_id: str = Field(..., description="Identifier of the submitting client")
+    client_name: str = Field(..., description="Name of the submitting client")
+    client_email: EmailStr = Field(..., description="Email of the submitting client")
+    
+    # Sample information
+    sample_type: SampleType = Field(..., description="Type of sample submitted")
+    sample_count: int = Field(..., ge=1, description="Number of samples in submission")
+    sample_volume: Optional[float] = Field(None, description="Volume of each sample in mL")
+    storage_condition: StorageCondition = Field(..., description="Required storage condition")
+    
+    # Processing requirements
+    processing_requirements: List[str] = Field(
+        default_factory=list,
+        description="List of processing requirements"
+    )
+    special_instructions: Optional[str] = Field(
+        None,
+        description="Special handling instructions"
+    )
+    
+    # Administrative tracking
+    submission_date: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Date and time of submission"
+    )
+    status: ProcessingStatus = Field(
+        default=ProcessingStatus.RECEIVED,
+        description="Current processing status"
+    )
+    priority: int = Field(
+        default=1,
+        ge=1,
+        le=5,
+        description="Processing priority (1-5, 1 being highest)"
+    )
     
     # Metadata
-    submission_id: Optional[str] = Field(None, description="Unique submission identifier")
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: Optional[datetime] = Field(None)
-    status: str = Field("pending", description="Submission status")
-    extracted_confidence: Optional[float] = Field(None, description="Extraction confidence score")
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata"
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Timestamp when record was created"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Timestamp when record was last updated"
+    )
     
     class Config:
+        """Pydantic model configuration"""
+        use_enum_values = True
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }

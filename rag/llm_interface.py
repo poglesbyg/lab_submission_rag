@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, List, Tuple
 import json
 import openai
 import anthropic
+import ollama
 from pydantic import ValidationError
 
 from models.submission import (
@@ -23,20 +24,36 @@ class LLMInterface:
     """Interface for LLM-based information extraction and query processing"""
     
     def __init__(self):
+        
         self.client = None
         self._initialize_client()
     
     def _initialize_client(self):
         """Initialize the LLM client based on configuration"""
         try:
+            # Check for Ollama first if enabled
+            if hasattr(settings, 'use_ollama') and settings.use_ollama:
+                try:
+                    # Test Ollama connection
+                    ollama.list()  # This will fail if Ollama is not running
+                    self.client = ollama
+                    self.client_type = "ollama"
+                    logger.info(f"Using Ollama with model: {settings.ollama_model}")
+                    return
+                except Exception as e:
+                    logger.warning(f"Ollama not available: {str(e)}. Falling back to other providers.")
+            
+            # Fall back to cloud providers
             if hasattr(settings, 'openai_api_key') and settings.openai_api_key:
                 openai.api_key = settings.openai_api_key
                 self.client_type = "openai"
+                logger.info("Using OpenAI API")
             elif hasattr(settings, 'anthropic_api_key') and settings.anthropic_api_key:
                 self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
                 self.client_type = "anthropic"
+                logger.info("Using Anthropic API")
             else:
-                logger.warning("No API keys found. LLM functionality will be limited.")
+                logger.warning("No LLM providers available. Using mock responses.")
                 self.client_type = "mock"
         except Exception as e:
             logger.error(f"Failed to initialize LLM client: {str(e)}")
@@ -176,23 +193,36 @@ Response format:
     async def _get_llm_response(self, prompt: str) -> str:
         """Get response from LLM"""
         try:
-            if self.client_type == "openai":
+            if self.client_type == "ollama":
+                # Use Ollama for local Llama models
+                response = await asyncio.to_thread(
+                    ollama.generate,
+                    model=settings.ollama_model,
+                    prompt=f"You are a specialized laboratory document processing assistant.\n\n{prompt}",
+                    options={
+                        "temperature": settings.llm_temperature,
+                        "num_predict": settings.max_tokens,
+                    }
+                )
+                return response['response']
+                
+            elif self.client_type == "openai":
                 response = await openai.ChatCompletion.acreate(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "You are a specialized laboratory document processing assistant."},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0.1,
-                    max_tokens=2000
+                    temperature=settings.llm_temperature,
+                    max_tokens=settings.max_tokens
                 )
                 return response.choices[0].message.content
                 
             elif self.client_type == "anthropic":
                 response = await self.client.messages.create(
                     model="claude-3-sonnet-20240229",
-                    max_tokens=2000,
-                    temperature=0.1,
+                    max_tokens=settings.max_tokens,
+                    temperature=settings.llm_temperature,
                     messages=[
                         {"role": "user", "content": prompt}
                     ]
