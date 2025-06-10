@@ -81,6 +81,20 @@ class Settings(BaseSettings):
         description="Directory for log files"
     )
     
+    # Enhanced RAG Settings
+    max_search_results: int = Field(
+        default=5,
+        description="Maximum number of search results to retrieve"
+    )
+    llm_temperature: float = Field(
+        default=0.3,
+        description="Temperature for LLM responses (0.0-1.0)"
+    )
+    max_tokens: int = Field(
+        default=2048,
+        description="Maximum tokens for LLM responses"
+    )
+    
     def validate_api_keys(self) -> None:
         """Validate that required API keys are present based on provider"""
         if self.llm_provider == "openai" and not self.openai_api_key:

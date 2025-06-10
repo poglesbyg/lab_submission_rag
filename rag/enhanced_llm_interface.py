@@ -56,40 +56,27 @@ class EnhancedLLMInterface:
     def __init__(self):
         self.client = None
         self.client_type = None
-        self.conversation_contexts = {}  # Store per-session contexts
+        self.conversation_contexts = {}
         self._initialize_client()
-        
-        # Lab Manager system knowledge
         self.lab_system_knowledge = self._load_lab_system_knowledge()
     
     def _initialize_client(self):
         """Initialize the LLM client with enhanced configuration"""
         try:
-            # Prefer more powerful models
             if hasattr(settings, 'use_ollama') and settings.use_ollama:
                 try:
                     ollama.list()
                     self.client = ollama
                     self.client_type = "ollama"
-                    # Use more powerful Ollama model if available
-                    available_models = ollama.list()
-                    model_preferences = ["llama3.1:8b", "llama3:8b", "mistral:7b", settings.ollama_model]
-                    
-                    for preferred_model in model_preferences:
-                        if any(preferred_model in model['name'] for model in available_models.get('models', [])):
-                            settings.ollama_model = preferred_model
-                            break
-                            
                     logger.info(f"Using enhanced Ollama with model: {settings.ollama_model}")
                     return
                 except Exception as e:
                     logger.warning(f"Ollama not available: {str(e)}")
             
-            # Use more powerful cloud models
             if hasattr(settings, 'openai_api_key') and settings.openai_api_key:
                 openai.api_key = settings.openai_api_key
                 self.client_type = "openai"
-                self.model_name = "gpt-4"  # Use GPT-4 for better intelligence
+                self.model_name = "gpt-4"
                 logger.info("Using OpenAI GPT-4 for enhanced intelligence")
             elif hasattr(settings, 'anthropic_api_key') and settings.anthropic_api_key:
                 self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
@@ -135,18 +122,6 @@ KEY WORKFLOWS:
    - Batch create samples from template data
    - Validate all entries before final submission
 
-4. Sequencing Jobs:
-   - Navigate to Sequencing → Create Job
-   - Select samples for sequencing
-   - Configure sequencing parameters
-   - Generate sample sheets for instruments
-
-5. Storage Management:
-   - Navigate to Storage → Manage Locations
-   - Scan barcodes to locate samples
-   - Track storage capacity and conditions
-   - Move samples between locations
-
 SAMPLE REQUIREMENTS:
 - Unique barcode (6+ characters)
 - Valid storage location
@@ -159,24 +134,11 @@ SUPPORTED FILE FORMATS:
 - Templates: XLSX, CSV
 - Exports: JSON, CSV, Excel
 
-API ENDPOINTS:
-- /api/samples/* - Sample management
-- /api/templates/* - Template operations
-- /api/sequencing/* - Sequencing workflows
-- /api/storage/* - Storage management
-- /api/samples/rag/* - AI-powered processing
-
 STORAGE CONDITIONS:
 - -80°C for long-term DNA/RNA storage
 - -20°C for short-term storage
 - 4°C for active samples
 - Room temperature for processed samples
-
-QUALITY REQUIREMENTS:
-- DNA: A260/A280 ratio 1.8-2.0
-- RNA: RIN score >7 for sequencing
-- Concentration >10 ng/μL minimum
-- Volume >50 μL recommended
 """
     
     def get_conversation_context(self, session_id: str = "default") -> ConversationContext:
@@ -194,10 +156,8 @@ QUALITY REQUIREMENTS:
     ) -> str:
         """Answer questions with enhanced intelligence and context"""
         try:
-            # Get conversation context
             context = self.get_conversation_context(session_id)
             
-            # Prepare enhanced context
             context_parts = [
                 "=== LAB MANAGER SYSTEM KNOWLEDGE ===",
                 self.lab_system_knowledge,
@@ -207,28 +167,21 @@ QUALITY REQUIREMENTS:
                 ""
             ]
             
-            # Add document chunks if available
             if relevant_chunks:
                 context_parts.append("=== RELEVANT DOCUMENTS ===")
                 for chunk_content, similarity_score in relevant_chunks:
                     context_parts.append(f"[Relevance: {similarity_score:.2f}]\n{chunk_content}")
                 context_parts.append("")
             
-            # Add structured submission data if available
             if submission_data:
                 context_parts.append("=== CURRENT SUBMISSION DATA ===")
                 context_parts.append(json.dumps(submission_data, indent=2))
                 context_parts.append("")
             
             full_context = "\n".join(context_parts)
-            
-            # Create enhanced prompt
             prompt = self._create_smart_assistant_prompt(query, full_context)
-            
-            # Get LLM response
             response = await self._get_enhanced_llm_response(prompt)
             
-            # Add to conversation history
             context.add_message("user", query)
             context.add_message("assistant", response)
             
@@ -261,13 +214,6 @@ INSTRUCTIONS:
 7. Use the conversation history to maintain context
 8. Be helpful, professional, and scientifically accurate
 
-RESPONSE STYLE:
-- Start with a direct answer to the question
-- Provide specific steps or procedures when relevant
-- Include helpful tips or best practices
-- Reference Lab Manager system features specifically
-- End with related suggestions or next steps when appropriate
-
 Available Context:
 {context}
 
@@ -285,8 +231,8 @@ Please provide a comprehensive, intelligent response that helps the user accompl
                     model=settings.ollama_model,
                     prompt=prompt,
                     options={
-                        "temperature": 0.3,  # Lower temperature for more focused responses
-                        "num_predict": 2048,  # Allow longer responses
+                        "temperature": 0.3,
+                        "num_predict": 2048,
                         "top_p": 0.9,
                         "repeat_penalty": 1.1,
                     }
@@ -355,7 +301,7 @@ Please provide a comprehensive, intelligent response that helps the user accompl
 
 Would you like me to explain any of these methods in more detail?"""
 
-        elif "storage" in query_lower and ("temperature" in query_lower or "condition" in query_lower):
+        elif "storage" in query_lower:
             return """**Storage Requirements for Laboratory Samples:**
 
 **Temperature Guidelines:**
@@ -368,13 +314,6 @@ Would you like me to explain any of these methods in more detail?"""
 - **DNA**: -20°C or -80°C, avoid freeze-thaw cycles
 - **RNA**: -80°C preferred, RNase-free environment
 - **Proteins**: 4°C for active use, -80°C for long-term
-- **Blood/Serum**: -80°C for biomarker studies
-
-**Quality Considerations:**
-• Use appropriate containers (cryovials for -80°C)
-• Label with date, sample ID, storage conditions
-• Monitor freezer temperatures and alarms
-• Maintain chain of custody documentation
 
 **Lab Manager Integration:**
 Navigate to **Storage** → **Manage Locations** to:
@@ -385,117 +324,14 @@ Navigate to **Storage** → **Manage Locations** to:
 
 Need help setting up storage locations or moving samples?"""
 
-        elif "sequencing" in query_lower:
-            return """**Sequencing Workflow in Lab Manager:**
-
-**1. Job Creation:**
-- Navigate to **Sequencing** → **Create Job**
-- Select samples for sequencing
-- Choose sequencing platform (Illumina, PacBio, etc.)
-- Set read parameters (paired-end, read length)
-
-**2. Sample Requirements:**
-- **DNA**: Concentration >10 ng/μL, A260/A280 ratio 1.8-2.0
-- **RNA**: RIN score >7, concentration >25 ng/μL
-- **Volume**: Minimum 50 μL recommended
-
-**3. Library Preparation:**
-- Specify library prep kit and protocol
-- Set target insert size and coverage
-- Include adapter/barcode information
-
-**4. Sample Sheet Generation:**
-- System generates instrument-specific sample sheets
-- Includes sample IDs, barcodes, and parameters
-- Export for direct instrument upload
-
-**5. Status Tracking:**
-- Monitor job progress through dashboard
-- Receive notifications on completion
-- Access results and quality metrics
-
-**Supported Platforms:**
-• Illumina (NovaSeq, NextSeq, MiSeq)
-• PacBio (Sequel, Revio)
-• Oxford Nanopore (MinION, PromethION)
-
-Would you like help with sample preparation requirements or job setup?"""
-
-        elif "rag" in query_lower or "ai" in query_lower or "document" in query_lower:
-            return """**AI-Powered Document Processing (RAG):**
-
-**How It Works:**
-The RAG (Retrieval-Augmented Generation) system automatically extracts laboratory information from documents using AI.
-
-**Supported Documents:**
-• PDF laboratory forms and submissions
-• Word documents with sample information
-• Research papers with experimental details
-• Protocol documents and SOPs
-
-**Processing Workflow:**
-1. **Navigate** to **AI Submissions** → **Upload Document**
-2. **Upload** your PDF/DOCX file
-3. **AI Extracts** information across 7 categories:
-   - Administrative info (submitter, project)
-   - Source material details
-   - Pooling/multiplexing data  
-   - Sequencing parameters
-   - Container specifications
-   - Analysis requirements
-   - Sample quality metrics
-
-**Review & Validation:**
-- System provides confidence scores
-- Review extracted data for accuracy
-- Edit any incorrect information
-- Approve creation of samples
-
-**Advantages:**
-• Reduces manual data entry errors
-• Processes complex documents quickly
-• Maintains data consistency
-• Tracks document source and confidence
-
-**Best Results:**
-- Use clear, well-formatted documents
-- Ensure text is readable (not scanned images)
-- Include complete sample information
-
-Ready to try document processing, or need help with a specific document type?"""
-
         else:
             return """I'm here to help you with the Lab Manager system! I can assist with:
 
-**Sample Management:**
-• Creating and tracking samples
-• Barcode generation and validation
-• Quality control procedures
-
-**Storage & Organization:**
-• Temperature requirements
-• Location management
-• Capacity planning
-
-**Sequencing Operations:**
-• Job setup and configuration
-• Sample requirements
-• Platform-specific workflows
-
-**AI Document Processing:**
-• Automated data extraction
-• PDF/DOCX form processing
-• Batch sample creation
-
-**Templates & Batch Operations:**
-• Excel/CSV upload procedures
-• Data validation and formatting
-• Bulk sample creation
-
-**System Navigation:**
-• Feature explanations
-• Workflow guidance
-• Best practices
+**Sample Management:** Creating, tracking, and validating samples
+**Storage & Organization:** Temperature requirements and location management  
+**Sequencing Operations:** Job setup and platform-specific workflows
+**AI Document Processing:** Automated data extraction from forms
+**Templates & Batch Operations:** Excel/CSV upload procedures
 
 What specific aspect would you like help with? Just describe what you're trying to accomplish!"""
 

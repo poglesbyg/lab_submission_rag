@@ -12,6 +12,7 @@ from datetime import datetime
 from rag.document_processor import DocumentProcessor
 from rag.vector_store import VectorStore
 from rag.llm_interface import LLMInterface
+from rag.enhanced_llm_interface import enhanced_llm
 from models.submission import LabSubmission, ExtractionResult, BatchExtractionResult
 from config import settings
 
@@ -50,10 +51,10 @@ class LabSubmissionRAG:
     def _ensure_directories(self):
         """Ensure all required directories exist"""
         directories = [
-            settings.data_directory,
-            settings.upload_directory,
-            settings.export_directory,
-            Path(settings.log_file).parent
+            settings.vector_store_path,
+            settings.upload_dir,
+            settings.export_dir,
+            settings.log_dir
         ]
         
         for directory in directories:
@@ -177,39 +178,45 @@ class LabSubmissionRAG:
             processing_time=processing_time
         )
     
-    async def query_submissions(self, query: str, filter_metadata: Optional[Dict[str, Any]] = None) -> str:
+    async def query_submissions(self, query: str, filter_metadata: Optional[Dict[str, Any]] = None, session_id: str = "default") -> str:
         """
-        Answer questions about laboratory submissions using RAG.
+        Answer questions about laboratory submissions using enhanced RAG intelligence.
         
         Args:
             query: Natural language query about submissions
             filter_metadata: Optional metadata filters for search
+            session_id: Session ID for conversation context
             
         Returns:
-            Natural language answer based on stored submission data
+            Natural language answer based on stored submission data and enhanced intelligence
         """
-        logger.info(f"Processing query: {query}")
+        logger.info(f"Processing enhanced query: {query}")
         
         try:
             # Search for relevant chunks
             relevant_chunks = await self.vector_store.similarity_search(
                 query, 
-                k=settings.max_search_results,
+                k=settings.max_search_results if hasattr(settings, 'max_search_results') else 5,
                 filter_metadata=filter_metadata
             )
             
-            # Convert to format expected by LLM interface
+            # Convert to format expected by enhanced LLM interface
             chunks_with_scores = [(chunk.content, score) for chunk, score in relevant_chunks]
             
-            # Get answer from LLM
-            answer = await self.llm_interface.answer_query(query, chunks_with_scores)
+            # Get enhanced answer from improved LLM interface
+            answer = await enhanced_llm.answer_query(
+                query, 
+                chunks_with_scores, 
+                session_id=session_id,
+                submission_data=None  # Could add submission context here
+            )
             
-            logger.info("Query processed successfully")
+            logger.info("Enhanced query processed successfully")
             return answer
             
         except Exception as e:
-            logger.error(f"Error processing query: {str(e)}")
-            return f"I apologize, but I encountered an error while processing your query: {str(e)}"
+            logger.error(f"Error processing enhanced query: {str(e)}")
+            return f"I apologize, but I encountered an error while processing your query. Please try rephrasing your question or contact support if the issue persists."
     
     async def _get_relevant_chunks_for_extraction(self, source_document: str) -> List[tuple]:
         """Get relevant chunks for information extraction from a specific document"""

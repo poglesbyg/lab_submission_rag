@@ -32,6 +32,7 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
     submission_id: Optional[str] = None
+    session_id: Optional[str] = "default"
     k: Optional[int] = 5
 
 # Updated response models to match Rust expectations
@@ -88,7 +89,8 @@ async def query_submission_information(request: QueryRequest):
     try:
         answer = await rag_system.query_submissions(
             query=request.query,
-            filter_metadata={"submission_id": request.submission_id} if request.submission_id else None
+            filter_metadata={"submission_id": request.submission_id} if request.submission_id else None,
+            session_id=request.session_id or "default"
         )
         return QueryResponse(answer=answer)
     except Exception as e:
