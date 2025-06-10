@@ -7,9 +7,9 @@ import shutil
 from pathlib import Path
 import json
 
-# Note: Import paths might need adjustment based on actual structure
-# from rag.rag_orchestrator import RAGOrchestrator
-# from models.submission import LabSubmission
+# Import the actual RAG system
+from rag_orchestrator import rag_system
+from models.submission import LabSubmission, ExtractionResult
 
 app = FastAPI(
     title="Laboratory Submission RAG API",
@@ -26,98 +26,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mock RAG orchestrator for now - replace with actual implementation
-class MockRAGOrchestrator:
-    def __init__(self):
-        pass
-    
-    async def process_submission(self, file_path: str) -> Dict[str, Any]:
-        """Mock processing that returns the expected format"""
-        return {
-            "success": True,
-            "submission": {
-                "administrative_info": {
-                    "submitter_first_name": "Dr. Jane",
-                    "submitter_last_name": "Smith",
-                    "submitter_email": "jane.smith@lab.edu",
-                    "submitter_phone": "555-0123",
-                    "assigned_project": "PROJ-2024-001"
-                },
-                "source_material": {
-                    "material_type": "Genomic DNA",
-                    "extraction_method": "QIAamp DNA Mini Kit",
-                    "storage_temperature": "-80C"
-                },
-                "pooling_info": {
-                    "is_pooled": False,
-                    "samples_in_pool": [],
-                    "pooling_strategy": "None"
-                },
-                "sequence_generation": {
-                    "sequencing_platform": "Illumina NovaSeq",
-                    "read_length": "150bp paired-end",
-                    "target_coverage": "30x"
-                },
-                "container_info": {
-                    "container_type": "96-well plate",
-                    "volume_ul": 50.0,
-                    "concentration_ng_ul": 100.0
-                },
-                "informatics_info": {
-                    "analysis_type": "WGS",
-                    "reference_genome": "GRCh38",
-                    "analysis_pipeline": "GATK"
-                },
-                "sample_details": {
-                    "sample_id": f"SAMPLE-{hash(file_path) % 10000}",
-                    "patient_id": "P001",
-                    "priority": "High",
-                    "quality_score": 8.5
-                },
-                "submission_id": f"SUB-{hash(file_path) % 10000}",
-                "status": "processed",
-                "extracted_confidence": 0.92
-            },
-            "confidence_score": 0.92,
-            "missing_fields": [],
-            "warnings": [],
-            "processing_time": 2.5,
-            "source_document": file_path
-        }
-    
-    async def query_submission(self, query: str, submission_id: Optional[str] = None, k: int = 5) -> str:
-        """Mock query that returns a reasonable answer"""
-        if "sequencing" in query.lower():
-            return "The sequencing platform being used is Illumina NovaSeq with 150bp paired-end reads targeting 30x coverage."
-        elif "submitter" in query.lower():
-            return "The submitter is Dr. Jane Smith from the laboratory."
-        elif "storage" in query.lower():
-            return "Samples require -80°C storage temperature."
-        else:
-            return f"Based on the processed documents, I found relevant information for your query: {query}"
-    
-    def get_system_info(self) -> Dict[str, Any]:
-        """Mock system info"""
-        return {
-            "status": "operational",
-            "vector_store": {
-                "total_documents": 5,
-                "total_chunks": 127,
-                "embedding_model": "all-MiniLM-L6-v2"
-            },
-            "supported_categories": [
-                "Administrative Information",
-                "Source and Submitting Material", 
-                "Pooling (Multiplexing)",
-                "Sequence Generation",
-                "Container and Diluent",
-                "Informatics",
-                "Sample Details"
-            ]
-        }
-
-# Initialize RAG orchestrator
-rag_orchestrator = MockRAGOrchestrator()
+# Use the actual RAG system
+# rag_system is already initialized in rag_orchestrator.py
 
 class QueryRequest(BaseModel):
     query: str
@@ -151,10 +61,24 @@ async def process_document_and_create_samples(file: UploadFile = File(...)):
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Process the submission using RAG orchestrator
-        result = await rag_orchestrator.process_submission(str(file_path))
+        # Process the submission using RAG system
+        result = await rag_system.process_document(str(file_path))
         
-        return RagExtractionResult(**result)
+        # Convert ExtractionResult to dictionary format expected by frontend
+        response_dict = {
+            "success": result.success,
+            "confidence_score": result.confidence_score or 0.0,
+            "missing_fields": result.missing_fields or [],
+            "warnings": result.warnings or [],
+            "processing_time": result.processing_time,
+            "source_document": result.source_document
+        }
+        
+        # Add submission data if extraction was successful
+        if result.success and result.submission:
+            response_dict["submission"] = result.submission.dict()
+        
+        return RagExtractionResult(**response_dict)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -162,10 +86,9 @@ async def process_document_and_create_samples(file: UploadFile = File(...)):
 async def query_submission_information(request: QueryRequest):
     """Query the RAG system with a specific question - matches Rust endpoint expectation"""
     try:
-        answer = await rag_orchestrator.query_submission(
+        answer = await rag_system.query_submissions(
             query=request.query,
-            submission_id=request.submission_id,
-            k=request.k or 5
+            filter_metadata={"submission_id": request.submission_id} if request.submission_id else None
         )
         return QueryResponse(answer=answer)
     except Exception as e:
@@ -180,7 +103,7 @@ async def health_check():
 async def get_system_info():
     """Get information about the RAG system."""
     try:
-        info = rag_orchestrator.get_system_info()
+        info = await rag_system.get_system_status()
         return info
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
