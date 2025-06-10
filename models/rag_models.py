@@ -15,6 +15,8 @@ class DocumentChunk(BaseModel):
     )
     chunk_id: str = Field(..., description="Unique identifier for the chunk")
     source_document: str = Field(..., description="Source document identifier")
+    chunk_index: Optional[int] = Field(None, description="Index of the chunk in the document")
+    embedding: Optional[List[float]] = Field(None, description="Embedding vector for the chunk")
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the chunk was created"
@@ -56,9 +58,9 @@ class VectorStoreInfo(BaseModel):
     """Information about the vector store state"""
     total_chunks: int = Field(..., description="Total number of chunks in store")
     total_documents: int = Field(..., description="Total number of source documents")
-    embedding_dimension: int = Field(..., description="Dimension of embeddings")
+    embedding_model: str = Field(..., description="Name of the embedding model used")
     last_updated: datetime = Field(..., description="Last update timestamp")
-    storage_path: str = Field(..., description="Path to vector store files")
+    storage_size: int = Field(..., description="Storage size in bytes")
 
 class QueryResult(BaseModel):
     """Result of a RAG query"""
