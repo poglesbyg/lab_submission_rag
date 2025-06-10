@@ -43,6 +43,10 @@ class LabSubmissionRAG:
         self.vector_store = VectorStore()
         self.llm_interface = LLMInterface()
         
+        # Initialize enhanced LLM for queries
+        from rag.enhanced_llm_interface import enhanced_llm
+        self.enhanced_llm = enhanced_llm
+        
         # Create necessary directories
         self._ensure_directories()
         
@@ -204,7 +208,7 @@ class LabSubmissionRAG:
             chunks_with_scores = [(chunk.content, score) for chunk, score in relevant_chunks]
             
             # Get enhanced answer from improved LLM interface
-            answer = await enhanced_llm.answer_query(
+            answer = await self.enhanced_llm.answer_query(
                 query, 
                 chunks_with_scores, 
                 session_id=session_id,

@@ -65,10 +65,16 @@ class EnhancedLLMInterface:
         try:
             if hasattr(settings, 'use_ollama') and settings.use_ollama:
                 try:
-                    ollama.list()
-                    self.client = ollama
+                    # Configure Ollama client with custom URL
+                    if hasattr(settings, 'ollama_base_url'):
+                        self.client = ollama.Client(host=settings.ollama_base_url)
+                    else:
+                        self.client = ollama.Client()
+                    
+                    # Test connection
+                    self.client.list()
                     self.client_type = "ollama"
-                    logger.info(f"Using enhanced Ollama with model: {settings.ollama_model}")
+                    logger.info(f"Using enhanced Ollama with model: {settings.ollama_model} at {getattr(settings, 'ollama_base_url', 'localhost:11434')}")
                     return
                 except Exception as e:
                     logger.warning(f"Ollama not available: {str(e)}")
@@ -227,12 +233,12 @@ Please provide a comprehensive, intelligent response that helps the user accompl
         try:
             if self.client_type == "ollama":
                 response = await asyncio.to_thread(
-                    ollama.generate,
+                    self.client.generate,
                     model=settings.ollama_model,
                     prompt=prompt,
                     options={
-                        "temperature": 0.3,
-                        "num_predict": 2048,
+                        "temperature": getattr(settings, 'llm_temperature', 0.3),
+                        "num_predict": getattr(settings, 'max_tokens', 2048),
                         "top_p": 0.9,
                         "repeat_penalty": 1.1,
                     }
