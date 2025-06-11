@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 class Settings(BaseSettings):
     """Application settings"""
@@ -104,12 +104,12 @@ class Settings(BaseSettings):
         if self.llm_provider == "ollama" and not self.use_ollama:
             raise ValueError("use_ollama must be True when using Ollama provider")
     
-    class Config:
-        """Pydantic settings configuration"""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False  # Allow case-insensitive environment variables
-        extra = "ignore"  # Ignore extra environment variables
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,  # Allow case-insensitive environment variables
+        extra="ignore"  # Ignore extra environment variables
+    )
 
 # Create settings instance
 settings = Settings()

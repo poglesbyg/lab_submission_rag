@@ -2,7 +2,7 @@
 Pydantic models for laboratory submission data
 """
 
-from pydantic import BaseModel, Field, EmailStr, validator
+from pydantic import BaseModel, Field, EmailStr, validator, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -180,12 +180,12 @@ class LabSubmission(BaseModel):
         description="Timestamp when record was last updated"
     )
     
-    class Config:
-        """Pydantic model configuration"""
-        use_enum_values = True
-        json_encoders = {
+    model_config = ConfigDict(
+        use_enum_values=True,
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 # Response Models
 class ExtractionResult(BaseModel):
