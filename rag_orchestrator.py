@@ -28,7 +28,7 @@ class LabSubmissionRAG:
     Main RAG system for extracting laboratory submission information from documents.
     
     This system can:
-    1. Process laboratory documents (PDF, DOCX)
+    1. Process laboratory documents (PDF, DOCX, TXT)
     2. Extract information across 7 categories using LLM
     3. Answer questions about submissions
     4. Store and retrieve submission data
@@ -81,7 +81,9 @@ class LabSubmissionRAG:
         
         try:
             # Step 1: Process document into chunks
+            logger.info(f"Starting document processing for {file_path}")
             document_chunks = await self.document_processor.process_document(file_path)
+            logger.info(f"Document processor returned {len(document_chunks)} chunks")
             
             if not document_chunks:
                 logger.warning(f"No chunks extracted from {file_path}")
@@ -94,16 +96,25 @@ class LabSubmissionRAG:
                     source_document=str(file_path)
                 )
             
+            # Log chunk details
+            for i, chunk in enumerate(document_chunks):
+                logger.debug(f"Chunk {i}: ID={chunk.chunk_id}, content_length={len(chunk.content)}")
+            
             # Step 2: Add chunks to vector store
+            logger.info(f"Adding {len(document_chunks)} chunks to vector store")
             await self.vector_store.add_chunks(document_chunks)
             
             # Step 3: Search for relevant chunks for each category
+            logger.info("Getting relevant chunks for extraction")
             relevant_chunks = await self._get_relevant_chunks_for_extraction(str(file_path))
+            logger.info(f"Found {len(relevant_chunks)} relevant chunks")
             
             # Step 4: Extract submission information using LLM
+            logger.info("Starting LLM extraction")
             extraction_result = await self.llm_interface.extract_submission_info(
                 relevant_chunks, str(file_path)
             )
+            logger.info(f"LLM extraction completed. Success: {extraction_result.success}")
             
             # Update processing time
             extraction_result.processing_time = time.time() - start_time

@@ -1,26 +1,43 @@
 version: '3.8'
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
   rag-service:
     build: .
     ports:
       - "8000:8000"
     volumes:
-      - ./uploads:/app/uploads
-      - ./exports:/app/exports
-      - ./logs:/app/logs
-      - ./data:/app/data
+      - uploads:/app/uploads
+      - exports:/app/exports
+      - logs:/app/logs
+      - data:/app/data
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - USE_OLLAMA=${USE_OLLAMA}
       - OLLAMA_MODEL=${OLLAMA_MODEL}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - OLLAMA_BASE_URL=http://ollama:11434
       - LLM_TEMPERATURE=${LLM_TEMPERATURE}
       - MAX_TOKENS=${MAX_TOKENS}
     restart: unless-stopped
+    depends_on:
+      - ollama
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3 
+      retries: 3
+
+volumes:
+  uploads:
+  exports:
+  logs:
+  data:
+  ollama_data: 

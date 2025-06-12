@@ -42,9 +42,49 @@ class DocumentProcessor:
             return await self._process_pdf(file_path)
         elif file_path.suffix == ".docx":
             return await self._process_docx(file_path)
+        elif file_path.suffix == ".txt":
+            return await self._process_txt(file_path)
         else:
             logger.error(f"Unsupported file type: {file_path.suffix}")
             return []
+
+    async def _process_txt(self, file_path: Path) -> List[DocumentChunk]:
+        """Process a text document and return chunks"""
+        chunks = []
+        try:
+            logger.info(f"Starting to process TXT file: {file_path}")
+            async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
+                text = await file.read()
+                logger.info(f"Read {len(text)} characters from file")
+                logger.debug(f"First 200 characters: {text[:200]}")
+                
+                if text.strip():
+                    logger.info("Text content found, splitting into chunks")
+                    # Split text into smaller chunks
+                    text_chunks = self.text_splitter.split_text(text)
+                    logger.info(f"Text splitter produced {len(text_chunks)} chunks")
+                    
+                    for chunk_idx, chunk_text in enumerate(text_chunks):
+                        logger.debug(f"Processing chunk {chunk_idx}, length: {len(chunk_text)}")
+                        if chunk_text.strip():
+                            chunk = self._create_chunk(
+                                chunk_text,
+                                file_path,
+                                page_number=1,
+                                chunk_index=chunk_idx
+                            )
+                            chunks.append(chunk)
+                            logger.debug(f"Created chunk {chunk_idx} with ID: {chunk.chunk_id}")
+                        else:
+                            logger.warning(f"Chunk {chunk_idx} is empty after stripping")
+                else:
+                    logger.warning("No text content found in file after stripping whitespace")
+                    
+            logger.info(f"Successfully processed TXT file, created {len(chunks)} chunks")
+        except Exception as e:
+            logger.error(f"Error processing TXT {file_path}: {str(e)}")
+            return []
+        return chunks
 
     async def _process_pdf(self, file_path: Path) -> List[DocumentChunk]:
         """Process a PDF document and return chunks"""
