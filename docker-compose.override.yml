@@ -1,0 +1,28 @@
+version: '3.8'
+
+# Override file for connecting to existing lab_manager database
+# This file allows the RAG service to connect to your existing lab_manager PostgreSQL database
+
+services:
+  rag-service:
+    environment:
+      # Override database connection to use lab_manager database
+      - DATABASE_URL=postgresql+asyncpg://${LAB_MANAGER_DB_USER:-postgres}:${LAB_MANAGER_DB_PASSWORD:-password}@lab_manager-db-1:5432/${LAB_MANAGER_DB_NAME:-lab_manager}
+      - DATABASE_HOST=lab_manager-db-1
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=${LAB_MANAGER_DB_NAME:-lab_manager}
+      - DATABASE_USER=${LAB_MANAGER_DB_USER:-postgres}
+      - DATABASE_PASSWORD=${LAB_MANAGER_DB_PASSWORD:-password}
+      # RAG table prefix to avoid conflicts
+      - TABLE_PREFIX=${RAG_TABLE_PREFIX:-rag_}
+    networks:
+      - default
+      # Connect to lab_manager network
+      - lab_manager_lab_network
+    external_links:
+      # Link to lab_manager postgres container
+      - lab_manager-db-1:postgres
+
+networks:
+  lab_manager_lab_network:
+    external: true 

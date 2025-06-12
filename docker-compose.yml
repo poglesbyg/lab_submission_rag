@@ -26,6 +26,13 @@ services:
       - OLLAMA_BASE_URL=http://ollama:11434
       - LLM_TEMPERATURE=${LLM_TEMPERATURE}
       - MAX_TOKENS=${MAX_TOKENS}
+      # Connect to external lab_manager database
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://user:password@host.docker.internal:5432/lab_manager}
+      - DATABASE_HOST=${DATABASE_HOST:-host.docker.internal}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-lab_manager}
+      - DATABASE_USER=${DATABASE_USER:-user}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-password}
     restart: unless-stopped
     depends_on:
       - ollama
@@ -34,10 +41,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    # Connect to the same Docker network as lab_manager if it exists
+    networks:
+      - default
+      - lab_manager_network
+    external_links:
+      - lab_manager_postgres:postgres
 
 volumes:
   uploads:
   exports:
   logs:
   data:
-  ollama_data: 
+  ollama_data:
+
+networks:
+  default:
+  lab_manager_network:
+    external: true
+    name: lab_manager_default 

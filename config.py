@@ -107,6 +107,52 @@ class Settings(BaseSettings):
         description="Directory for exporting processed data"
     )
     
+    # Database Settings
+    database_url: str = Field(
+        default="postgresql+asyncpg://user:password@host.docker.internal:5432/lab_manager",
+        description="PostgreSQL database URL"
+    )
+    database_host: str = Field(
+        default="host.docker.internal",
+        description="Database host"
+    )
+    database_port: int = Field(
+        default=5432,
+        description="Database port"
+    )
+    database_name: str = Field(
+        default="lab_manager",
+        description="Database name"
+    )
+    database_user: str = Field(
+        default="user",
+        description="Database user"
+    )
+    database_password: str = Field(
+        default="password",
+        description="Database password"
+    )
+    database_pool_size: int = Field(
+        default=10,
+        description="Database connection pool size"
+    )
+    database_max_overflow: int = Field(
+        default=20,
+        description="Database connection pool max overflow"
+    )
+    
+    # RAG-specific table prefix to avoid conflicts with lab_manager tables
+    table_prefix: str = Field(
+        default="rag_",
+        description="Prefix for RAG system tables to avoid conflicts"
+    )
+    
+    # Schema name for RAG tables (optional)
+    database_schema: Optional[str] = Field(
+        default=None,
+        description="Database schema name for RAG tables (optional)"
+    )
+    
     def validate_api_keys(self) -> None:
         """Validate that required API keys are present based on provider"""
         if self.llm_provider == "openai" and not self.openai_api_key:

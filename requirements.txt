@@ -9,6 +9,11 @@ pypdf>=4.0.0
 python-docx>=0.8.11
 aiofiles>=23.2.0
 
+# Database
+asyncpg>=0.29.0
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+
 # Data Models and Validation
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
