@@ -244,9 +244,9 @@ def mock_vector_store():
 @pytest.fixture
 def mock_rag_system():
     """Mock RAG system for integration testing"""
-    from rag_orchestrator import RAGOrchestrator
+    from rag_orchestrator import LabSubmissionRAG
     
-    mock_rag = Mock(spec=RAGOrchestrator)
+    mock_rag = Mock(spec=LabSubmissionRAG)
     mock_rag.process_document = AsyncMock()
     mock_rag.query_submissions = AsyncMock(return_value="Test response")
     mock_rag.get_system_status = AsyncMock(return_value={"status": "healthy"})

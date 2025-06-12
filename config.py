@@ -94,6 +94,18 @@ class Settings(BaseSettings):
         default=2048,
         description="Maximum tokens for LLM responses"
     )
+    similarity_threshold: float = Field(
+        default=0.5,
+        description="Minimum similarity score for chunk inclusion"
+    )
+    batch_size: int = Field(
+        default=5,
+        description="Batch size for processing multiple documents"
+    )
+    export_directory: str = Field(
+        default="exports",
+        description="Directory for exporting processed data"
+    )
     
     def validate_api_keys(self) -> None:
         """Validate that required API keys are present based on provider"""
