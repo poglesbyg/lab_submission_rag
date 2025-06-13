@@ -44,7 +44,7 @@ services:
     # Connect to the same Docker network as lab_manager if it exists
     networks:
       - default
-      - lab_manager_network
+      - lab_manager_lab_network
     external_links:
       - lab_manager_postgres:postgres
 
@@ -57,6 +57,5 @@ volumes:
 
 networks:
   default:
-  lab_manager_network:
+  lab_manager_lab_network:
     external: true
-    name: lab_manager_default 
