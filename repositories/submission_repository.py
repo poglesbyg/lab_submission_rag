@@ -42,7 +42,7 @@ class SubmissionRepository:
                 submission_date=submission.submission_date,
                 status=submission.status,
                 priority=submission.priority,
-                metadata=submission.metadata
+                meta_data=submission.metadata
             )
             
             self.session.add(db_submission)

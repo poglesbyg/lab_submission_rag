@@ -153,6 +153,13 @@ class Settings(BaseSettings):
         description="Database schema name for RAG tables (optional)"
     )
     
+    # Memory Optimization Settings
+    MEMORY_OPTIMIZED: bool = True
+    EMBEDDING_MODEL_CACHE: bool = False  # Don't cache models in memory
+    VECTOR_STORE_MEMORY_LIMIT: int = 100  # MB limit for vector storage
+    CHROMADB_PERSIST_DIRECTORY: str = "/app/data/chromadb"  # Persist to disk
+    EMBEDDING_BATCH_SIZE: int = 8  # Smaller batches to reduce memory spikes
+    
     def validate_api_keys(self) -> None:
         """Validate that required API keys are present based on provider"""
         if self.llm_provider == "openai" and not self.openai_api_key:

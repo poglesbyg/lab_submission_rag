@@ -80,7 +80,7 @@ class LabSubmissionDB(Base):
     priority = Column(Integer, default=1)
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    meta_data = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
@@ -240,7 +240,7 @@ class DocumentChunkDB(Base):
     embedding = Column(JSON, nullable=True)
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    meta_data = Column(JSON, default=dict)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -288,13 +288,5 @@ class QueryLogDB(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-# Optional: Create a view or adapter to connect with existing lab_manager tables
-# This would allow the RAG system to read from existing lab_manager data
-class LabManagerSampleView(Base):
-    """View to connect with existing lab_manager sample data (if available)"""
-    __tablename__ = "lab_manager_samples"  # This would be the actual lab_manager table name
-    __table_args__ = {'extend_existing': True}
-    
-    id = Column(Integer, primary_key=True)
-    # Add columns that match your existing lab_manager sample table structure
-    # This is a placeholder - you'll need to update this based on your actual schema 
+# Note: Lab Manager tables are managed separately by the Lab Manager service
+# The RAG system uses its own tables with the rag_ prefix to avoid conflicts 

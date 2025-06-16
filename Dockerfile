@@ -1,33 +1,40 @@
-# Use Python 3.11 slim image as base
+# Memory-Optimized RAG Service Dockerfile
 FROM python:3.11-slim
 
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
+# Install system dependencies (minimal set)
 RUN apt-get update && apt-get install -y \
     build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Copy requirements first to leverage Docker cache
+WORKDIR /app
+
+# Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with memory optimizations
+RUN pip install --no-cache-dir --compile \
+    -r requirements.txt && \
+    python -m compileall /usr/local/lib/python3.11/site-packages/ && \
+    pip uninstall -y pip setuptools wheel
 
-# Copy the rest of the application
+# Copy application code
 COPY . .
 
 # Create necessary directories
 RUN mkdir -p uploads exports logs data
 
-# Set environment variables
-ENV PYTHONPATH=/app
+# Memory optimization: Use smaller Python allocator
+ENV PYTHONMALLOC=malloc
+ENV MALLOC_TRIM_THRESHOLD_=100000
+ENV MALLOC_TOP_PAD_=100000
+ENV MALLOC_MMAP_THRESHOLD_=100000
+
+# Set memory-optimized Python flags
+ENV PYTHONOPTIMIZE=1
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Expose the port the app runs on
-EXPOSE 8000
-
-# Command to run the application
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Use uvicorn with memory optimization
+CMD ["python", "-c", "import gc; gc.set_threshold(100, 10, 10); exec(open('main.py').read())"] 
