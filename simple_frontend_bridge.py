@@ -153,6 +153,108 @@ async def process_document():
         "processing_time": 0.0
     }
 
+class QueryRequest(BaseModel):
+    """Request model for queries"""
+    query: str
+    session_id: Optional[str] = "default"
+
+class QueryResponse(BaseModel):
+    """Response model for queries"""
+    answer: str
+
+@app.post("/query", response_model=QueryResponse)
+async def query_submission_information(request: QueryRequest):
+    """Query the RAG system for information about submitted samples"""
+    try:
+        # For now, provide a helpful response about the lab management system
+        # This is a simplified implementation without full RAG capabilities
+        
+        query_lower = request.query.lower()
+        
+        # Check if user is asking about lab processes
+        if any(word in query_lower for word in ['submit', 'sample', 'lab', 'process', 'upload']):
+            answer = """I can help you with laboratory sample management! Here are some key features:
+
+• **Sample Submission**: Upload documents and I'll extract sample information using AI
+• **Sample Management**: Create, edit, and track samples with barcodes
+• **Storage System**: Manage sample locations and storage conditions
+• **Sequencing Jobs**: Set up and track sequencing workflows
+• **Templates**: Use Excel templates for batch sample uploads
+• **Reports**: Generate custom reports and analytics
+
+To submit samples, you can:
+1. Use the RAG document processing feature to upload lab submission forms
+2. Manually create samples using the sample creation form
+3. Upload Excel templates with sample data
+
+What specific aspect would you like to know more about?"""
+        
+        elif any(word in query_lower for word in ['storage', 'location', 'temperature']):
+            answer = """For sample storage management:
+
+• **Storage Locations**: Create and manage storage locations (freezers, refrigerators, etc.)
+• **Temperature Control**: Track storage temperatures (-80°C, -20°C, 4°C, room temp)
+• **Barcode Scanning**: Use barcodes to track sample movements
+• **Capacity Management**: Monitor storage capacity and utilization
+• **Sample Movement**: Log when samples are moved between locations
+
+Storage best practices:
+- DNA samples: -20°C or -80°C for long-term storage
+- RNA samples: -80°C (very temperature sensitive)
+- Protein samples: -80°C with appropriate buffers
+- Cell cultures: Liquid nitrogen or -80°C
+
+Would you like help with setting up storage locations or moving samples?"""
+        
+        elif any(word in query_lower for word in ['sequencing', 'dna', 'rna', 'library']):
+            answer = """For sequencing workflows:
+
+• **Sequencing Jobs**: Create jobs with specific protocols and parameters
+• **Sample Sheets**: Generate sample sheets for sequencing instruments
+• **Quality Control**: Track quality metrics (purity, concentration, integrity)
+• **Library Preparation**: Manage library prep protocols and kits
+• **Data Analysis**: Configure analysis pipelines and reference genomes
+
+Supported platforms:
+- Illumina (MiSeq, NextSeq, NovaSeq)
+- Oxford Nanopore (MinION, GridION)
+- PacBio (Sequel, Revio)
+
+Quality requirements:
+- DNA: A260/A280 ratio 1.8-2.0, concentration >10 ng/μL
+- RNA: RIN score >7, concentration >100 ng/μL
+
+Need help setting up a sequencing job or checking sample quality?"""
+        
+        else:
+            # Default helpful response
+            answer = f"""Thank you for your question: "{request.query}"
+
+I'm your lab management assistant! I can help you with:
+
+• **Sample Processing**: Submit and manage laboratory samples
+• **Document Analysis**: Upload lab forms and extract information automatically  
+• **Storage Management**: Track sample locations and conditions
+• **Sequencing Workflows**: Set up and monitor sequencing jobs
+• **Data Management**: Generate reports and analyze lab data
+• **System Navigation**: Guide you through the lab manager interface
+
+Some popular questions:
+- "How do I submit a new sample?"
+- "What are the storage requirements for DNA samples?"
+- "How do I create a sequencing job?"
+- "Can you help me generate a sample report?"
+
+What would you like help with today?"""
+        
+        return QueryResponse(answer=answer)
+        
+    except Exception as e:
+        # Return a helpful error message
+        return QueryResponse(
+            answer=f"I apologize, but I'm having trouble processing your question right now. This could be due to a temporary system issue. Please try again in a moment, or contact your lab administrator if the problem persists. Error details: {str(e)}"
+        )
+
 # Startup event to test database connection
 @app.on_event("startup")
 async def startup_event():
