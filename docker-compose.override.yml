@@ -1,4 +1,4 @@
-version: '3.8'
+# Override configuration for development
 
 # Override file for connecting to existing lab_manager database
 # This file allows the RAG service to connect to your existing lab_manager PostgreSQL database

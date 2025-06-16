@@ -162,97 +162,272 @@ class QueryResponse(BaseModel):
     """Response model for queries"""
     answer: str
 
+def get_intelligent_response(query: str) -> str:
+    """Generate intelligent responses based on query content"""
+    query_lower = query.lower().strip()
+    
+    # Greeting responses
+    if any(word in query_lower for word in ['hello', 'hi', 'hey', 'greetings']):
+        return f"""Hello! I'm your lab management assistant. I can help you with sample processing, storage management, sequencing workflows, and more.
+
+What can I help you with today? You can ask me about:
+• Submitting new samples
+• Storage requirements 
+• Setting up sequencing jobs
+• Generating reports
+• Using the lab management system"""
+
+    # Sample submission and processing (check this BEFORE general help)
+    elif any(phrase in query_lower for phrase in ['submit', 'upload', 'create sample', 'new sample', 'add sample', 'submit a sample', 'submit sample', 'submission']):
+        return """To submit new samples, you have several options:
+
+1. 📄 AI DOCUMENT PROCESSING (Recommended)
+   • Upload lab submission forms (PDF, Word, or text)
+   • I'll automatically extract sample information
+   • Review and confirm the extracted data
+   
+2. ✏️ MANUAL SAMPLE ENTRY
+   • Use the "Create Sample" form
+   • Fill in all required fields manually
+   • Generate barcodes automatically
+
+3. 📊 BULK UPLOAD VIA TEMPLATES
+   • Download Excel templates
+   • Fill in multiple samples at once
+   • Upload for batch processing
+
+Which method would you prefer to use?"""
+
+    # Storage and temperature questions
+    elif any(word in query_lower for word in ['storage', 'store', 'temperature', 'freezer', 'refrigerator', 'location']):
+        return """For sample storage management:
+
+🌡️ TEMPERATURE REQUIREMENTS:
+• DNA samples: -20°C or -80°C for long-term storage
+• RNA samples: -80°C (temperature critical!)
+• Proteins: -80°C with appropriate buffers
+• Cell cultures: Liquid nitrogen (-196°C) or -80°C
+
+📍 STORAGE LOCATIONS:
+• Create freezer/refrigerator locations
+• Assign storage positions with barcodes
+• Track capacity and utilization
+• Log all sample movements
+
+🔍 FINDING SAMPLES:
+• Scan barcodes to locate samples
+• Search by sample ID or name
+• View storage history and movements
+
+Would you like help setting up storage locations or finding a specific sample?"""
+
+    # Sequencing and molecular biology
+    elif any(word in query_lower for word in ['sequencing', 'sequence', 'dna', 'rna', 'library', 'prep', 'qc', 'quality']):
+        return """For sequencing workflows and quality control:
+
+🧬 SEQUENCING PLATFORMS SUPPORTED:
+• Illumina: MiSeq, NextSeq, NovaSeq
+• Oxford Nanopore: MinION, GridION  
+• PacBio: Sequel, Revio
+
+📋 SAMPLE SHEET GENERATION:
+• Automatically create sample sheets
+• Include barcodes and metadata
+• Export in platform-specific formats
+
+🔬 QUALITY REQUIREMENTS:
+• DNA: A260/A280 ratio 1.8-2.0, >10 ng/μL
+• RNA: RIN score >7, >100 ng/μL
+• Library QC: Fragment size, molarity
+
+📊 TRACKING & ANALYSIS:
+• Monitor job progress and status
+• Track quality metrics over time
+• Configure analysis pipelines
+
+What type of sequencing are you planning?"""
+
+    # Reports and data analysis  
+    elif any(word in query_lower for word in ['report', 'export', 'data', 'analysis', 'statistics', 'analytics', 'generate report', 'create report']):
+        return """For reports and data analysis:
+
+📊 AVAILABLE REPORTS:
+• Sample inventory and status reports
+• Storage utilization summaries
+• Sequencing job progress tracking
+• Quality metrics analysis
+• Custom SQL queries
+
+📤 EXPORT OPTIONS:
+• Excel spreadsheets (.xlsx)
+• CSV files for further analysis
+• PDF reports for sharing
+• JSON data for API integration
+
+🔍 SEARCH & FILTER:
+• Advanced search across all samples
+• Filter by date ranges, sample types
+• Sort by various criteria
+• Save commonly used filters
+
+📈 ANALYTICS:
+• Track lab productivity over time
+• Monitor storage usage trends
+• Quality control statistics
+• Sample submission patterns
+
+What kind of report would you like to generate?"""
+
+    # Barcode and tracking
+    elif any(phrase in query_lower for phrase in ['barcode', 'track', 'find sample', 'locate sample', 'scan', 'find a sample', 'locate a sample', 'where is sample']):
+        return """For barcode tracking and sample location:
+
+🏷️ BARCODE SYSTEM:
+• Automatic barcode generation for new samples
+• Customizable barcode formats
+• Support for 1D and 2D codes
+• Print barcode labels directly
+
+📍 SAMPLE TRACKING:
+• Scan barcodes to find samples instantly
+• Track movements between locations
+• Maintain complete audit trails
+• Real-time location updates
+
+🔍 SEARCH CAPABILITIES:
+• Search by barcode, sample name, or ID
+• Filter by storage location or date
+• View complete sample history
+• Export tracking reports
+
+📱 MOBILE SCANNING:
+• Use smartphone cameras for scanning
+• Update locations on-the-go
+• Quick status updates
+
+Need help finding a specific sample or setting up barcode printing?"""
+
+    # Templates and batch processing
+    elif any(word in query_lower for word in ['template', 'excel', 'batch', 'bulk', 'multiple']):
+        return """For template-based batch processing:
+
+📊 EXCEL TEMPLATES:
+• Download pre-formatted templates
+• Include all required sample fields
+• Built-in validation rules
+• Example data provided
+
+📤 BATCH UPLOAD PROCESS:
+1. Download the Excel template
+2. Fill in your sample information
+3. Upload the completed file
+4. Review and validate data
+5. Confirm batch creation
+
+✅ VALIDATION FEATURES:
+• Automatic data validation
+• Duplicate detection
+• Format checking
+• Error highlighting with suggestions
+
+🔄 SUPPORTED FORMATS:
+• Excel (.xlsx, .xls)
+• CSV files
+• Tab-delimited text
+• Custom formats on request
+
+How many samples are you looking to upload at once?"""
+
+    # Help and general queries (check after specific ones)
+    elif any(phrase in query_lower for phrase in ['help', 'what can you do', 'what do you do', 'how can you help', 'what are your capabilities']):
+        return """I'm here to help with your laboratory management needs! Here's what I can assist with:
+
+🧪 SAMPLE MANAGEMENT
+• Submit samples using AI document processing
+• Create and edit sample records with barcodes
+• Track sample status and locations
+
+🏠 STORAGE SYSTEMS  
+• Manage storage locations and conditions
+• Track temperature requirements
+• Monitor capacity and sample movements
+
+🧬 SEQUENCING WORKFLOWS
+• Set up sequencing jobs and protocols
+• Generate sample sheets for instruments
+• Track quality metrics and analysis
+
+📊 DATA & REPORTS
+• Generate custom reports and analytics
+• Export data in various formats
+• Search and filter sample information
+
+Just ask me a specific question about any of these areas!"""
+
+    # Login, access, and system issues
+    elif any(word in query_lower for word in ['login', 'access', 'permission', 'error', 'problem', 'issue']):
+        return """For system access and troubleshooting:
+
+🔐 ACCESS ISSUES:
+• Default admin login: admin@lab.local / admin123
+• Contact your lab administrator for new accounts
+• Different roles have different permissions
+• Password reset available through admin
+
+❗ COMMON ISSUES:
+• Clear browser cache if pages aren't loading
+• Check internet connection for API calls
+• Refresh page if data seems outdated
+• Try logging out and back in
+
+🛠️ TROUBLESHOOTING:
+• Browser compatibility: Chrome, Firefox, Safari
+• Enable JavaScript and cookies
+• Disable ad blockers if needed
+• Check for system maintenance announcements
+
+👥 USER ROLES:
+• Lab Administrator: Full access
+• Principal Investigator: Sample and project management
+• Lab Technician: Sample processing and QC
+• Data Analyst: Reports and analytics only
+
+What specific issue are you experiencing?"""
+
+    # Default response for unmatched queries
+    else:
+        return f"""I understand you're asking about: "{query}"
+
+I'm your lab management assistant and I can help with many laboratory tasks. Here are some things you might want to know about:
+
+🧪 COMMON TASKS:
+• "How do I submit a new sample?"
+• "What are the storage requirements for DNA?"
+• "How do I create a sequencing job?"
+• "Can you help me generate a report?"
+• "Where is sample XYZ located?"
+
+🔍 TRY ASKING ABOUT:
+• Sample submission and processing
+• Storage locations and temperatures  
+• Sequencing workflows and QC
+• Barcode tracking and scanning
+• Data export and reporting
+• System navigation and troubleshooting
+
+Could you rephrase your question or ask about a specific lab management task? I'm here to help make your laboratory work more efficient!"""
+
 @app.post("/query", response_model=QueryResponse)
 async def query_submission_information(request: QueryRequest):
     """Query the RAG system for information about submitted samples"""
     try:
-        # For now, provide a helpful response about the lab management system
-        # This is a simplified implementation without full RAG capabilities
-        
-        query_lower = request.query.lower()
-        
-        # Check if user is asking about lab processes
-        if any(word in query_lower for word in ['submit', 'sample', 'lab', 'process', 'upload']):
-            answer = """I can help you with laboratory sample management! Here are some key features:
-
-• **Sample Submission**: Upload documents and I'll extract sample information using AI
-• **Sample Management**: Create, edit, and track samples with barcodes
-• **Storage System**: Manage sample locations and storage conditions
-• **Sequencing Jobs**: Set up and track sequencing workflows
-• **Templates**: Use Excel templates for batch sample uploads
-• **Reports**: Generate custom reports and analytics
-
-To submit samples, you can:
-1. Use the RAG document processing feature to upload lab submission forms
-2. Manually create samples using the sample creation form
-3. Upload Excel templates with sample data
-
-What specific aspect would you like to know more about?"""
-        
-        elif any(word in query_lower for word in ['storage', 'location', 'temperature']):
-            answer = """For sample storage management:
-
-• **Storage Locations**: Create and manage storage locations (freezers, refrigerators, etc.)
-• **Temperature Control**: Track storage temperatures (-80°C, -20°C, 4°C, room temp)
-• **Barcode Scanning**: Use barcodes to track sample movements
-• **Capacity Management**: Monitor storage capacity and utilization
-• **Sample Movement**: Log when samples are moved between locations
-
-Storage best practices:
-- DNA samples: -20°C or -80°C for long-term storage
-- RNA samples: -80°C (very temperature sensitive)
-- Protein samples: -80°C with appropriate buffers
-- Cell cultures: Liquid nitrogen or -80°C
-
-Would you like help with setting up storage locations or moving samples?"""
-        
-        elif any(word in query_lower for word in ['sequencing', 'dna', 'rna', 'library']):
-            answer = """For sequencing workflows:
-
-• **Sequencing Jobs**: Create jobs with specific protocols and parameters
-• **Sample Sheets**: Generate sample sheets for sequencing instruments
-• **Quality Control**: Track quality metrics (purity, concentration, integrity)
-• **Library Preparation**: Manage library prep protocols and kits
-• **Data Analysis**: Configure analysis pipelines and reference genomes
-
-Supported platforms:
-- Illumina (MiSeq, NextSeq, NovaSeq)
-- Oxford Nanopore (MinION, GridION)
-- PacBio (Sequel, Revio)
-
-Quality requirements:
-- DNA: A260/A280 ratio 1.8-2.0, concentration >10 ng/μL
-- RNA: RIN score >7, concentration >100 ng/μL
-
-Need help setting up a sequencing job or checking sample quality?"""
-        
-        else:
-            # Default helpful response
-            answer = f"""Thank you for your question: "{request.query}"
-
-I'm your lab management assistant! I can help you with:
-
-• **Sample Processing**: Submit and manage laboratory samples
-• **Document Analysis**: Upload lab forms and extract information automatically  
-• **Storage Management**: Track sample locations and conditions
-• **Sequencing Workflows**: Set up and monitor sequencing jobs
-• **Data Management**: Generate reports and analyze lab data
-• **System Navigation**: Guide you through the lab manager interface
-
-Some popular questions:
-- "How do I submit a new sample?"
-- "What are the storage requirements for DNA samples?"
-- "How do I create a sequencing job?"
-- "Can you help me generate a sample report?"
-
-What would you like help with today?"""
-        
+        answer = get_intelligent_response(request.query)
         return QueryResponse(answer=answer)
         
     except Exception as e:
         # Return a helpful error message
         return QueryResponse(
-            answer=f"I apologize, but I'm having trouble processing your question right now. This could be due to a temporary system issue. Please try again in a moment, or contact your lab administrator if the problem persists. Error details: {str(e)}"
+            answer=f"I apologize, but I'm having trouble processing your question right now. This could be due to a temporary system issue. Please try again in a moment, or contact your lab administrator if the problem persists."
         )
 
 # Startup event to test database connection
