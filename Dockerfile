@@ -5,6 +5,7 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y \
     build-essential \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -36,5 +37,5 @@ ENV PYTHONOPTIMIZE=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Use uvicorn with memory optimization
-CMD ["python", "-c", "import gc; gc.set_threshold(100, 10, 10); exec(open('main.py').read())"] 
+# Run the simple frontend bridge (no complex dependencies)
+CMD ["python", "simple_frontend_bridge.py"] 
