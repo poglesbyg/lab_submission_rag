@@ -2,15 +2,42 @@
 """
 Simple Laboratory Submission RAG System
 
-A lightweight, easy-to-run version that focuses on core functionality:
-- Document processing (PDF, DOCX, TXT)
-- Information extraction using OpenAI
-- Simple file-based storage
-- Basic query functionality
+DEPRECATED: This file has been refactored for better modularity.
 
-Dependencies: Only 9 essential packages instead of 49+
-No database, no web framework, no complex architecture.
+New usage:
+- Use simple_lab_rag_refactored.py for the main system
+- Individual components are now in the simple/ directory:
+  - simple.models: Data structures
+  - simple.document_processor: Document handling
+  - simple.llm_interface: LLM interactions
+
+This legacy file is maintained for backward compatibility but will be removed in future versions.
 """
+
+import warnings
+warnings.warn(
+    "simple_lab_rag.py is deprecated. Use simple_lab_rag_refactored.py instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# For backward compatibility, import from the refactored version
+try:
+    from simple_lab_rag_refactored import LightweightLabRAG, create_demo_document, main
+    
+    # Legacy aliases
+    SimpleLabRAG = LightweightLabRAG
+    
+except ImportError as e:
+    print(f"Error importing refactored version: {e}")
+    print("Please ensure simple_lab_rag_refactored.py and the simple/ module are available.")
+    raise
+
+if __name__ == "__main__":
+    print("⚠️ Warning: Using deprecated simple_lab_rag.py")
+    print("Please switch to simple_lab_rag_refactored.py for better performance and maintainability.")
+    print()
+    main()
 
 import os
 import json
